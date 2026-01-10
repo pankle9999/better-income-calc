@@ -29,6 +29,7 @@
   <button onclick="calculate()">Calculate</button>
   <button onclick="loadLogs()">Load Logs</button>
   <button onclick="clearTable()">Clear Table</button>
+  <button onclick="exportLogs()">Export Logs as JSON</button>
 
   <h3 id="result"></h3>
 
@@ -48,7 +49,8 @@
 <script type="module">
   // --- Firebase SDK ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
   // --- Your Firebase config ---
   const firebaseConfig = {
@@ -64,6 +66,20 @@
   // --- Initialize Firebase ---
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  let currentUser = null;
+
+  // --- Anonymous login ---
+  signInAnonymously(auth)
+    .catch(error => console.error("Auth error:", error));
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      currentUser = user;
+      console.log("Logged in anonymously:", user.uid);
+    }
+  });
 
   // --- Helper functions ---
   function addRow(ts, week, loss, add) {
@@ -77,6 +93,8 @@
   }
 
   async function saveLogInternal(log) {
+    if (!currentUser) { alert("User not logged in yet."); return; }
+    log.userId = currentUser.uid; // Save logs per user
     try {
       await addDoc(collection(db, "logs"), log);
       console.log("Log saved successfully!");
@@ -86,9 +104,11 @@
   }
 
   async function loadLogsInternal() {
+    if (!currentUser) { alert("User not logged in yet."); return; }
     clearTableInternal();
     try {
-      const querySnapshot = await getDocs(collection(db, "logs"));
+      const q = query(collection(db, "logs"), where("userId", "==", currentUser.uid));
+      const querySnapshot = await getDocs(q);
       querySnapshot.forEach(doc => {
         const log = doc.data();
         log.weeks.forEach(w => addRow(log.timestamp, w.week, w.afterLoss, w.afterAdd));
@@ -98,16 +118,36 @@
     }
   }
 
-  // --- Expose functions globally so buttons work ---
-  window.clearTable = function() {
-    clearTableInternal();
-  };
+  async function exportLogsInternal() {
+    if (!currentUser) { alert("User not logged in yet."); return; }
+    try {
+      const q = query(collection(db, "logs"), where("userId", "==", currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      let allLogs = [];
+      querySnapshot.forEach(doc => allLogs.push(doc.data()));
 
-  window.loadLogs = async function() {
-    await loadLogsInternal();
-  };
+      const jsonStr = JSON.stringify(allLogs, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "money_logs.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) {
+      console.error("Error exporting logs:", e);
+    }
+  }
+
+  // --- Global functions for buttons ---
+  window.clearTable = function() { clearTableInternal(); };
+  window.loadLogs = async function() { await loadLogsInternal(); };
+  window.exportLogs = async function() { await exportLogsInternal(); };
 
   window.calculate = async function() {
+    if (!currentUser) { alert("User not logged in yet."); return; }
+
     let existing = Number(document.getElementById("existing").value);
     let weekly = Number(document.getElementById("weekly").value);
     let weeks = Number(document.getElementById("weeks").value);
@@ -122,15 +162,12 @@
     for (let i = 1; i <= weeks; i++) {
       let afterLoss = Math.ceil(existing * 0.95);
       let afterAdd = afterLoss + weekly;
-
       log.weeks.push({ week: i, afterLoss, afterAdd });
       addRow(log.timestamp, i, afterLoss, afterAdd);
-
       existing = afterAdd;
     }
 
     document.getElementById("result").innerText = "Final Money: " + existing;
-
     await saveLogInternal(log);
   };
 </script>
