@@ -72,12 +72,11 @@
     document.getElementById("tableBody").appendChild(row);
   }
 
-  function clearTable() {
+  function clearTableInternal() {
     document.getElementById("tableBody").innerHTML = "";
   }
 
-  // --- Save log to Firestore ---
-  async function saveLog(log) {
+  async function saveLogInternal(log) {
     try {
       await addDoc(collection(db, "logs"), log);
       console.log("Log saved successfully!");
@@ -86,9 +85,8 @@
     }
   }
 
-  // --- Load logs from Firestore ---
-  async function loadLogs() {
-    clearTable();
+  async function loadLogsInternal() {
+    clearTableInternal();
     try {
       const querySnapshot = await getDocs(collection(db, "logs"));
       querySnapshot.forEach(doc => {
@@ -100,33 +98,42 @@
     }
   }
 
-  // --- Main calculation ---
-  async function calculate() {
+  // --- Expose functions globally so buttons work ---
+  window.clearTable = function() {
+    clearTableInternal();
+  };
+
+  window.loadLogs = async function() {
+    await loadLogsInternal();
+  };
+
+  window.calculate = async function() {
     let existing = Number(document.getElementById("existing").value);
     let weekly = Number(document.getElementById("weekly").value);
     let weeks = Number(document.getElementById("weeks").value);
 
-    if(!existing || !weekly || !weeks) {
+    if (!existing || !weekly || !weeks) {
       alert("Enter valid numbers");
       return;
     }
 
     let log = { timestamp: new Date().toLocaleString(), weeks: [] };
 
-    for(let i=1; i<=weeks; i++) {
-      let afterLoss = Math.ceil(existing*0.95);
+    for (let i = 1; i <= weeks; i++) {
+      let afterLoss = Math.ceil(existing * 0.95);
       let afterAdd = afterLoss + weekly;
 
-      log.weeks.push({ week:i, afterLoss, afterAdd });
+      log.weeks.push({ week: i, afterLoss, afterAdd });
       addRow(log.timestamp, i, afterLoss, afterAdd);
 
       existing = afterAdd;
     }
 
     document.getElementById("result").innerText = "Final Money: " + existing;
-    await saveLog(log);
-  }
 
+    await saveLogInternal(log);
+  };
 </script>
+
 </body>
 </html>
