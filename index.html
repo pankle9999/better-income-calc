@@ -4,12 +4,30 @@
 <meta charset="UTF-8">
 <title>Better Income Calculator</title>
 <style>
-  body { font-family: Arial; background:#f4f4f4; padding:20px; }
-  .container { background:white; padding:20px; max-width:700px; margin:auto; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);}
-  input, button { padding:8px; margin:5px 0; width:100%; }
-  table { width:100%; border-collapse: collapse; margin-top:15px; }
-  th, td { border:1px solid #ccc; padding:6px; text-align:center; }
-  th { background:#eee; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #eef2f7;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    background: white;
+    padding: 30px;
+    max-width: 800px;
+    margin: 40px auto;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  h2 { text-align: center; color: #333; margin-bottom: 25px; }
+  label { display: block; margin: 10px 0 5px; color: #555; }
+  input { padding: 10px; width: 100%; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+  .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .button-row button { flex: 1; padding: 10px; border-radius: 6px; border: none; cursor: pointer; background-color: #4a90e2; color: white; font-weight: bold; transition: 0.2s; }
+  .button-row button:hover { background-color: #357ab7; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+  th { background:#f5f5f5; }
+  #result { text-align:center; font-size:1.2em; margin-top:15px; color:#222; }
 </style>
 </head>
 <body>
@@ -17,42 +35,53 @@
 <div class="container">
   <h2>Better Income Calculator</h2>
 
-  <label>Existing Money</label>
-  <input id="existing" type="number">
+  <!-- Username login -->
+  <label>Enter your username</label>
+  <input id="username" type="text" placeholder="e.g. pankle999">
+  <div class="button-row">
+    <button onclick="login()">Login</button>
+  </div>
 
-  <label>Weekly Add</label>
-  <input id="weekly" type="number">
+  <!-- Calculator section -->
+  <div id="calculator" style="display:none;">
+    <label>Existing Money</label>
+    <input id="existing" type="number">
 
-  <label>Weeks</label>
-  <input id="weeks" type="number">
+    <label>Weekly Add</label>
+    <input id="weekly" type="number">
 
-  <button onclick="calculate()">Calculate</button>
-  <button onclick="loadLogs()">Load Logs</button>
-  <button onclick="clearTable()">Clear Table</button>
-  <button onclick="exportLogs()">Export Logs as JSON</button>
+    <label>Weeks</label>
+    <input id="weeks" type="number">
 
-  <h3 id="result"></h3>
+    <div class="button-row">
+      <button onclick="calculate()">Calculate</button>
+      <button onclick="loadLogs()">Load Logs</button>
+      <button onclick="clearTable()">Clear Table</button>
+      <button onclick="exportLogs()">Export Logs</button>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>Week</th>
-        <th>After 5% Loss</th>
-        <th>After Weekly Add</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+    <h3 id="result"></h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Timestamp</th>
+          <th>Week</th>
+          <th>After 5% Loss</th>
+          <th>After Weekly Add</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 </div>
 
 <script type="module">
-  // --- Firebase SDK ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
-  // --- Your Firebase config ---
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyC7cbWLzC90Tgvf6KueOURUKfkWXxUXmI4",
     authDomain: "money-calculator-b205c.firebaseapp.com",
@@ -63,28 +92,24 @@
     measurementId: "G-2VGW9684EB"
   };
 
-  // --- Initialize Firebase ---
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const auth = getAuth(app);
 
   let currentUser = null;
 
-  // --- Anonymous login ---
-  signInAnonymously(auth)
-    .catch(error => console.error("Auth error:", error));
+  // --- Login ---
+  window.login = function() {
+    const usernameInput = document.getElementById("username").value.trim();
+    if (!usernameInput) { alert("Enter a username"); return; }
+    currentUser = usernameInput;
+    document.getElementById("calculator").style.display = "block";
+    alert("Logged in as " + currentUser);
+  };
 
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      currentUser = user;
-      console.log("Logged in anonymously:", user.uid);
-    }
-  });
-
-  // --- Helper functions ---
-  function addRow(ts, week, loss, add) {
+  // --- Helpers ---
+  function addRow(username, ts, week, loss, add) {
     let row = document.createElement("tr");
-    row.innerHTML = `<td>${ts}</td><td>${week}</td><td>${loss}</td><td>${add}</td>`;
+    row.innerHTML = `<td>${username}</td><td>${ts}</td><td>${week}</td><td>${loss}</td><td>${add}</td>`;
     document.getElementById("tableBody").appendChild(row);
   }
 
@@ -93,69 +118,65 @@
   }
 
   async function saveLogInternal(log) {
-    if (!currentUser) { alert("User not logged in yet."); return; }
-    log.userId = currentUser.uid; // Save logs per user
-    try {
-      await addDoc(collection(db, "logs"), log);
-      console.log("Log saved successfully!");
-    } catch(e) {
-      console.error("Error saving log:", e);
-    }
+    if (!currentUser) { alert("Please log in first"); return; }
+    log.username = currentUser;
+    try { await addDoc(collection(db, "logs"), log); }
+    catch(e){ console.error("Error saving log:", e); }
   }
 
   async function loadLogsInternal() {
-    if (!currentUser) { alert("User not logged in yet."); return; }
+    if (!currentUser) { alert("Please log in first"); return; }
     clearTableInternal();
     try {
-      const q = query(collection(db, "logs"), where("userId", "==", currentUser.uid));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach(doc => {
+      const q = query(collection(db, "logs"), where("username", "==", currentUser));
+      const snapshot = await getDocs(q);
+      snapshot.forEach(doc => {
         const log = doc.data();
-        log.weeks.forEach(w => addRow(log.timestamp, w.week, w.afterLoss, w.afterAdd));
+        log.weeks.forEach(w => addRow(log.username, log.timestamp, w.week, w.afterLoss, w.afterAdd));
       });
-    } catch(e) {
-      console.error("Error loading logs:", e);
-    }
+    } catch(e) { console.error(e); }
   }
 
   async function exportLogsInternal() {
-    if (!currentUser) { alert("User not logged in yet."); return; }
+    if (!currentUser) { alert("Please log in first"); return; }
     try {
-      const q = query(collection(db, "logs"), where("userId", "==", currentUser.uid));
-      const querySnapshot = await getDocs(q);
-      let allLogs = [];
-      querySnapshot.forEach(doc => allLogs.push(doc.data()));
+      let snapshot;
+      if (currentUser === "Ec0n0mySt4ff0nT0p") {
+        // Admin: get all logs
+        snapshot = await getDocs(collection(db, "logs"));
+      } else {
+        // Regular user: only their logs
+        const q = query(collection(db, "logs"), where("username", "==", currentUser));
+        snapshot = await getDocs(q);
+      }
 
+      let allLogs = [];
+      snapshot.forEach(doc => allLogs.push(doc.data()));
       const jsonStr = JSON.stringify(allLogs, null, 2);
       const blob = new Blob([jsonStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = "money_logs.json";
+      a.download = (currentUser === "Ec0n0mySt4ff0nT0p" ? "ALL_LOGS" : currentUser + "_logs") + ".json";
       a.click();
       URL.revokeObjectURL(url);
-    } catch(e) {
-      console.error("Error exporting logs:", e);
-    }
+    } catch(e){ console.error(e); }
   }
 
-  // --- Global functions for buttons ---
-  window.clearTable = function() { clearTableInternal(); };
-  window.loadLogs = async function() { await loadLogsInternal(); };
-  window.exportLogs = async function() { await exportLogsInternal(); };
+  // --- Global functions ---
+  window.clearTable = function(){ clearTableInternal(); };
+  window.loadLogs = async function(){ await loadLogsInternal(); };
+  window.exportLogs = async function(){ await exportLogsInternal(); };
 
   window.calculate = async function() {
-    if (!currentUser) { alert("User not logged in yet."); return; }
+    if (!currentUser) { alert("Please log in first"); return; }
 
     let existing = Number(document.getElementById("existing").value);
     let weekly = Number(document.getElementById("weekly").value);
     let weeks = Number(document.getElementById("weeks").value);
 
-    if (!existing || !weekly || !weeks) {
-      alert("Enter valid numbers");
-      return;
-    }
+    if (!existing || !weekly || !weeks) { alert("Enter valid numbers"); return; }
 
     let log = { timestamp: new Date().toLocaleString(), weeks: [] };
 
@@ -163,7 +184,7 @@
       let afterLoss = Math.ceil(existing * 0.95);
       let afterAdd = afterLoss + weekly;
       log.weeks.push({ week: i, afterLoss, afterAdd });
-      addRow(log.timestamp, i, afterLoss, afterAdd);
+      addRow(currentUser, log.timestamp, i, afterLoss, afterAdd);
       existing = afterAdd;
     }
 
