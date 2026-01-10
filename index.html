@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Money Calculator</title>
+<title>Better Income Calculator</title>
 <style>
   body { font-family: Arial; background:#f4f4f4; padding:20px; }
   .container { background:white; padding:20px; max-width:700px; margin:auto; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);}
@@ -15,7 +15,7 @@
 <body>
 
 <div class="container">
-  <h2>Money Calculator</h2>
+  <h2>Better Income Calculator</h2>
 
   <label>Existing Money</label>
   <input id="existing" type="number">
@@ -65,7 +65,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // --- Helper Functions ---
+  // --- Helper functions ---
   function addRow(ts, week, loss, add) {
     let row = document.createElement("tr");
     row.innerHTML = `<td>${ts}</td><td>${week}</td><td>${loss}</td><td>${add}</td>`;
