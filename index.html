@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Money Calculator</title>
+<style>
+  body { font-family: Arial; background:#f4f4f4; padding:20px; }
+  .container { background:white; padding:20px; max-width:700px; margin:auto; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);}
+  input, button { padding:8px; margin:5px 0; width:100%; }
+  table { width:100%; border-collapse: collapse; margin-top:15px; }
+  th, td { border:1px solid #ccc; padding:6px; text-align:center; }
+  th { background:#eee; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Money Calculator</h2>
+
+  <label>Existing Money</label>
+  <input id="existing" type="number">
+
+  <label>Weekly Add</label>
+  <input id="weekly" type="number">
+
+  <label>Weeks</label>
+  <input id="weeks" type="number">
+
+  <button onclick="calculate()">Calculate</button>
+  <button onclick="loadLogs()">Load Logs</button>
+  <button onclick="clearTable()">Clear Table</button>
+
+  <h3 id="result"></h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Week</th>
+        <th>After 5% Loss</th>
+        <th>After Weekly Add</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<script type="module">
+  // --- Firebase SDK ---
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+  // --- Your Firebase config ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyC7cbWLzC90Tgvf6KueOURUKfkWXxUXmI4",
+    authDomain: "money-calculator-b205c.firebaseapp.com",
+    projectId: "money-calculator-b205c",
+    storageBucket: "money-calculator-b205c.firebasestorage.app",
+    messagingSenderId: "1082194101254",
+    appId: "1:1082194101254:web:2115c50916683795e22f87",
+    measurementId: "G-2VGW9684EB"
+  };
+
+  // --- Initialize Firebase ---
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // --- Helper Functions ---
+  function addRow(ts, week, loss, add) {
+    let row = document.createElement("tr");
+    row.innerHTML = `<td>${ts}</td><td>${week}</td><td>${loss}</td><td>${add}</td>`;
+    document.getElementById("tableBody").appendChild(row);
+  }
+
+  function clearTable() {
+    document.getElementById("tableBody").innerHTML = "";
+  }
+
+  // --- Save log to Firestore ---
+  async function saveLog(log) {
+    try {
+      await addDoc(collection(db, "logs"), log);
+      console.log("Log saved successfully!");
+    } catch(e) {
+      console.error("Error saving log:", e);
+    }
+  }
+
+  // --- Load logs from Firestore ---
+  async function loadLogs() {
+    clearTable();
+    try {
+      const querySnapshot = await getDocs(collection(db, "logs"));
+      querySnapshot.forEach(doc => {
+        const log = doc.data();
+        log.weeks.forEach(w => addRow(log.timestamp, w.week, w.afterLoss, w.afterAdd));
+      });
+    } catch(e) {
+      console.error("Error loading logs:", e);
+    }
+  }
+
+  // --- Main calculation ---
+  async function calculate() {
+    let existing = Number(document.getElementById("existing").value);
+    let weekly = Number(document.getElementById("weekly").value);
+    let weeks = Number(document.getElementById("weeks").value);
+
+    if(!existing || !weekly || !weeks) {
+      alert("Enter valid numbers");
+      return;
+    }
+
+    let log = { timestamp: new Date().toLocaleString(), weeks: [] };
+
+    for(let i=1; i<=weeks; i++) {
+      let afterLoss = Math.ceil(existing*0.95);
+      let afterAdd = afterLoss + weekly;
+
+      log.weeks.push({ week:i, afterLoss, afterAdd });
+      addRow(log.timestamp, i, afterLoss, afterAdd);
+
+      existing = afterAdd;
+    }
+
+    document.getElementById("result").innerText = "Final Money: " + existing;
+    await saveLog(log);
+  }
+
+</script>
+</body>
+</html>
