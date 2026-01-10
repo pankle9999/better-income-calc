@@ -13,7 +13,7 @@
   .container {
     background: white;
     padding: 30px;
-    max-width: 800px;
+    max-width: 850px;
     margin: 40px auto;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
@@ -50,21 +50,21 @@
 <div class="container">
   <h2>Better Income Calculator</h2>
 
-  <!-- Admin Login button in corner -->
+  <!-- Admin Login button -->
   <button id="adminLoginBtn" onclick="adminLogin()">Admin Login</button>
 
-  <!-- Calculator inputs -->
+  <!-- Inputs -->
   <label>Existing Money</label>
   <input id="existing" type="number" placeholder="Enter current money">
 
   <label>Weekly Add</label>
   <input id="weekly" type="number" placeholder="Enter weekly addition">
 
+  <label>Weeks (or leave blank if using last payment date)</label>
+  <input id="weeks" type="number" placeholder="Number of weeks">
+
   <label>Last Payment Date (optional)</label>
   <input type="date" id="lastPayment">
-  
-  <label>Weeks</label>
-  <input id="weeks" type="number" placeholder="Number of weeks">
 
   <div class="button-row">
     <button onclick="calculate()">Calculate</button>
@@ -82,6 +82,7 @@
         <th>Timestamp</th>
         <th>Week</th>
         <th>After 5% Loss</th>
+        <th>Weekly (10% Reduced)</th>
         <th>After Weekly Add</th>
       </tr>
     </thead>
@@ -107,13 +108,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Assign a random session ID for guest users
+// Guest session ID
 let currentUser = "guest_" + Math.random().toString(36).substr(2, 9);
 let isAdmin = false;
 
-function addRow(username, ts, week, loss, add) {
+function addRow(username, ts, week, afterLoss, weeklyAdjusted, afterAdd) {
   let row = document.createElement("tr");
-  row.innerHTML = `<td>${username}</td><td>${ts}</td><td>${week}</td><td>${loss}</td><td>${add}</td>`;
+  row.innerHTML = `<td>${username}</td><td>${ts}</td><td>${week}</td><td>${afterLoss}</td><td>${weeklyAdjusted}</td><td>${afterAdd}</td>`;
   document.getElementById("tableBody").appendChild(row);
 }
 
@@ -139,7 +140,7 @@ async function loadLogs() {
     }
     snapshot.forEach(doc => {
       const log = doc.data();
-      log.weeks.forEach(w => addRow(log.username, log.timestamp, w.week, w.afterLoss, w.afterAdd));
+      log.weeks.forEach(w => addRow(log.username, log.timestamp, w.week, w.afterLoss, w.weeklyAdjusted, w.afterAdd));
     });
   } catch(e){ console.error(e); }
 }
@@ -173,7 +174,6 @@ async function exportLogs() {
 window.clearTable = clearTableInternal;
 
 window.calculate = async function() {
-  // Get inputs
   let existing = Number(document.getElementById("existing").value);
   let weekly = Number(document.getElementById("weekly").value);
   const weeksInput = Number(document.getElementById("weeks").value);
@@ -190,12 +190,8 @@ window.calculate = async function() {
     const lastDate = new Date(lastPaymentDate);
     const today = new Date();
     const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-    // Round: 4+ days → round up, ≤3 → round down
     weeks = diffDays % 7 >= 4 ? Math.floor(diffDays / 7) + 1 : Math.floor(diffDays / 7);
-    if (weeks <= 0) {
-      alert("The last payment date is too recent. Weeks calculated as 0.");
-      return;
-    }
+    if (weeks <= 0) { alert("The last payment date is too recent."); return; }
   } else {
     weeks = weeksInput;
     if (!weeks || weeks <= 0) { 
@@ -206,25 +202,20 @@ window.calculate = async function() {
 
   let log = { timestamp: new Date().toLocaleString(), weeks: [] };
 
-  // Weekly calculation loop
   for (let i = 1; i <= weeks; i++) {
-    let afterLoss = Math.ceil(existing * 0.95);       // 5% loss on existing
-    let weeklyAdjusted = Math.ceil(weekly * 0.9);     // weekly reduced by 10%
-    let afterAdd = afterLoss + weeklyAdjusted;        // add adjusted weekly
+    let afterLoss = Math.ceil(existing * 0.95);       // 5% loss
+    let weeklyAdjusted = Math.ceil(weekly * 0.9);     // 10% reduction
+    let afterAdd = afterLoss + weeklyAdjusted;        // add weeklyAdjusted
     log.weeks.push({ week: i, afterLoss, weeklyAdjusted, afterAdd });
-    addRow(currentUser, log.timestamp, i, afterLoss, afterAdd); // update table
-    existing = afterAdd; // update existing for next week
+    addRow(currentUser, log.timestamp, i, afterLoss, weeklyAdjusted, afterAdd);
+    existing = afterAdd;
   }
 
   document.getElementById("result").innerText = "Final Money: " + existing;
-
-  // Save to Firebase (admin) or guest session logs
   await saveLogInternal(log);
 };
 
-
-
-// Admin login button
+// Admin login
 window.adminLogin = function() {
   const uname = prompt("Enter admin username:");
   if (uname === "Ec0n0mySt4ff0nT0p") {
