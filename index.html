@@ -60,6 +60,9 @@
   <label>Weekly Add</label>
   <input id="weekly" type="number" placeholder="Enter weekly addition">
 
+  <label>Last Payment Date (optional)</label>
+  <input type="date" id="lastPayment">
+  
   <label>Weeks</label>
   <input id="weeks" type="number" placeholder="Number of weeks">
 
@@ -170,27 +173,55 @@ async function exportLogs() {
 window.clearTable = clearTableInternal;
 
 window.calculate = async function() {
+  // Get inputs
   let existing = Number(document.getElementById("existing").value);
   let weekly = Number(document.getElementById("weekly").value);
-  let weeks = Number(document.getElementById("weeks").value);
+  const weeksInput = Number(document.getElementById("weeks").value);
+  const lastPaymentDate = document.getElementById("lastPayment").value;
 
-  if (!existing || !weekly || !weeks) { alert("Enter valid numbers"); return; }
+  if (!existing || !weekly) { 
+    alert("Enter valid numbers for existing money and weekly add."); 
+    return; 
+  }
+
+  // Determine weeks
+  let weeks;
+  if (lastPaymentDate) {
+    const lastDate = new Date(lastPaymentDate);
+    const today = new Date();
+    const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+    // Round: 4+ days → round up, ≤3 → round down
+    weeks = diffDays % 7 >= 4 ? Math.floor(diffDays / 7) + 1 : Math.floor(diffDays / 7);
+    if (weeks <= 0) {
+      alert("The last payment date is too recent. Weeks calculated as 0.");
+      return;
+    }
+  } else {
+    weeks = weeksInput;
+    if (!weeks || weeks <= 0) { 
+      alert("Enter a valid number of weeks or a last payment date."); 
+      return; 
+    }
+  }
 
   let log = { timestamp: new Date().toLocaleString(), weeks: [] };
 
+  // Weekly calculation loop
   for (let i = 1; i <= weeks; i++) {
-    let afterLoss = Math.ceil(existing * 0.95);          // 5% loss on existing money
-    let weeklyAdjusted = Math.ceil(weekly * 0.9);        // reduce weekly by 10%
-    let afterAdd = afterLoss + weeklyAdjusted;           // add adjusted weekly
+    let afterLoss = Math.ceil(existing * 0.95);       // 5% loss on existing
+    let weeklyAdjusted = Math.ceil(weekly * 0.9);     // weekly reduced by 10%
+    let afterAdd = afterLoss + weeklyAdjusted;        // add adjusted weekly
     log.weeks.push({ week: i, afterLoss, weeklyAdjusted, afterAdd });
-    addRow(currentUser, log.timestamp, i, afterLoss, afterAdd);
-    existing = afterAdd;
+    addRow(currentUser, log.timestamp, i, afterLoss, afterAdd); // update table
+    existing = afterAdd; // update existing for next week
   }
 
   document.getElementById("result").innerText = "Final Money: " + existing;
 
+  // Save to Firebase (admin) or guest session logs
   await saveLogInternal(log);
 };
+
 
 
 // Admin login button
