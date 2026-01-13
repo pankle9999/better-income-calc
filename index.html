@@ -25,7 +25,10 @@ body {
 
 h2 { text-align: center; }
 
-label { display:block; margin-top:12px; }
+label {
+  display:block;
+  margin-top:12px;
+}
 
 input {
   width:100%;
@@ -45,8 +48,6 @@ button {
   cursor:pointer;
 }
 
-button:hover { opacity: 0.9; }
-
 .button-row {
   display:flex;
   gap:10px;
@@ -60,13 +61,15 @@ table {
   margin-top:20px;
 }
 
-th,td {
+th, td {
   border:1px solid #ccc;
   padding:8px;
   text-align:center;
 }
 
-th { background:#f5f5f5; }
+th {
+  background:#f5f5f5;
+}
 
 #result {
   text-align:center;
@@ -86,84 +89,85 @@ th { background:#f5f5f5; }
   position:absolute;
   top:20px;
   left:20px;
+  background:#222;
+  color:white;
   font-size:18px;
 }
 
-/* ---------- DARK MODE ---------- */
-
+/* DARK MODE */
 body.dark {
-  background: #121212;
-  color: #eaeaea;
+  background:#121212;
+  color:#eaeaea;
 }
 
 body.dark .container {
-  background: #1e1e1e;
+  background:#1e1e1e;
 }
 
 body.dark input {
-  background: #2a2a2a;
-  color: white;
-  border: 1px solid #444;
+  background:#2a2a2a;
+  color:white;
+  border:1px solid #444;
 }
 
 body.dark th {
-  background: #333;
+  background:#333;
 }
 
 body.dark td {
-  background: #1e1e1e;
+  background:#1e1e1e;
 }
 
 body.dark button {
-  background: #5a9bff;
+  background:#5a9bff;
 }
 
 body.dark #adminLoginBtn {
-  background: #ff6a3d;
+  background:#ff6a3d;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-<h2>Better Income Calculator</h2>
+  <h2>Better Income Calculator</h2>
 
-<button id="darkModeBtn" onclick="toggleDarkMode()">🌙</button>
-<button id="adminLoginBtn" onclick="adminLogin()">Admin Login</button>
+  <button id="darkModeBtn">🌙</button>
+  <button id="adminLoginBtn">Admin Login</button>
 
-<label>Existing Money</label>
-<input id="existing" placeholder="e.g. 1,000 or 1.000">
+  <label>Existing Money</label>
+  <input id="existing" placeholder="1,000 or 1.000">
 
-<label>Weekly Add</label>
-<input id="weekly" placeholder="e.g. 500">
+  <label>Weekly Add</label>
+  <input id="weekly" placeholder="500">
 
-<label>Weeks</label>
-<input id="weeks" type="number">
+  <label>Weeks</label>
+  <input id="weeks" type="number">
 
-<label>Last Payment Date (optional)</label>
-<input type="date" id="lastPayment">
+  <label>Last Payment Date (optional)</label>
+  <input type="date" id="lastPayment">
 
-<div class="button-row">
-  <button onclick="calculate()">Calculate</button>
-  <button onclick="exportLogs()">Export Logs</button>
-  <button onclick="loadLogs()">Load Logs</button>
-</div>
+  <div class="button-row">
+    <button id="calcBtn">Calculate</button>
+    <button id="loadBtn">Load Logs</button>
+    <button id="exportBtn">Export Logs</button>
+  </div>
 
-<div id="result"></div>
+  <div id="result"></div>
 
-<table>
-<thead>
-<tr>
-  <th>User</th>
-  <th>Time</th>
-  <th>Week</th>
-  <th>After 5%</th>
-  <th>Weekly (-10%)</th>
-  <th>Total</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
-</table>
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Time</th>
+        <th>Week</th>
+        <th>After 5%</th>
+        <th>Weekly (-10%)</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
 </div>
 
 <script type="module">
@@ -187,25 +191,14 @@ const db = getFirestore(app);
 let currentUser = "guest_" + Math.random().toString(36).slice(2);
 let isAdmin = false;
 
-/* ---------- DARK MODE ---------- */
+/* ---------- DOM ---------- */
+const existingInput = document.getElementById("existing");
+const weeklyInput = document.getElementById("weekly");
+const weeksInput = document.getElementById("weeks");
+const lastPaymentInput = document.getElementById("lastPayment");
+const tableBody = document.getElementById("tableBody");
+const resultDiv = document.getElementById("result");
 const darkBtn = document.getElementById("darkModeBtn");
-
-function updateDarkIcon() {
-  darkBtn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
-}
-
-function toggleDarkMode() {
-  document.body.classList.toggle("dark");
-  localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "on" : "off");
-  updateDarkIcon();
-}
-
-if (localStorage.getItem("darkMode") === "on") {
-  document.body.classList.add("dark");
-}
-updateDarkIcon();
-
-window.toggleDarkMode = toggleDarkMode;
 
 /* ---------- HELPERS ---------- */
 function parseMoney(val) {
@@ -236,32 +229,39 @@ function addRow(u, t, w, a, wa, tot) {
 }
 
 /* ---------- AUTO WEEKS ---------- */
-lastPayment.addEventListener("change", () => {
-  if (!lastPayment.value) return;
-  const d1 = new Date(lastPayment.value);
-  const d2 = new Date();
-  const days = Math.floor((d2 - d1) / 86400000);
-  let weeks = days % 7 >= 4 ? Math.floor(days / 7) + 1 : Math.floor(days / 7);
-  weeks.value = Math.max(0, weeks);
-  document.getElementById("weeks").value = weeks;
+lastPaymentInput.addEventListener("change", () => {
+  if (!lastPaymentInput.value) return;
+
+  const from = new Date(lastPaymentInput.value);
+  const now = new Date();
+  const days = Math.floor((now - from) / 86400000);
+
+  let calcWeeks =
+    days % 7 >= 4 ? Math.floor(days / 7) + 1 : Math.floor(days / 7);
+
+  weeksInput.value = Math.max(0, calcWeeks);
 });
 
 /* ---------- CALCULATE ---------- */
-window.calculate = async function() {
+async function calculate() {
   clearTable();
 
-  let existing = parseMoney(existingInput.value || existing.value);
-  let weekly = parseMoney(weeklyInput.value || weekly.value);
-  let weeksCount = Number(weeks.value);
+  let existing = parseMoney(existingInput.value);
+  let weekly = parseMoney(weeklyInput.value);
+  let weeks = Number(weeksInput.value);
 
-  if (!existing || !weekly || !weeksCount) {
+  if (!existing || !weekly || !weeks) {
     alert("Invalid input");
     return;
   }
 
-  const log = { username: currentUser, timestamp: new Date().toLocaleString(), weeks: [] };
+  const log = {
+    username: currentUser,
+    timestamp: new Date().toLocaleString(),
+    weeks: []
+  };
 
-  for (let i = 1; i <= weeksCount; i++) {
+  for (let i = 1; i <= weeks; i++) {
     let afterLoss = Math.ceil(existing * 0.95);
     let weeklyAdj = Math.ceil(weekly * 0.9);
     let total = afterLoss + weeklyAdj;
@@ -272,26 +272,26 @@ window.calculate = async function() {
     existing = total;
   }
 
-  result.textContent = "Final Money: " + fmt(existing);
+  resultDiv.textContent = "Final Money: " + fmt(existing);
   await addDoc(collection(db, "logs"), log);
-};
+}
 
 /* ---------- LOGS ---------- */
-window.loadLogs = async function() {
+async function loadLogs() {
   clearTable();
   const q = isAdmin
     ? collection(db, "logs")
     : query(collection(db, "logs"), where("username", "==", currentUser));
 
   const snap = await getDocs(q);
-  snap.forEach(d =>
+  snap.forEach(d => {
     d.data().weeks.forEach(w =>
       addRow(d.data().username, d.data().timestamp, w.week, w.afterLoss, w.weeklyAdj, w.total)
-    )
-  );
-};
+    );
+  });
+}
 
-window.exportLogs = async function() {
+async function exportLogs() {
   const q = isAdmin
     ? collection(db, "logs")
     : query(collection(db, "logs"), where("username", "==", currentUser));
@@ -300,15 +300,31 @@ window.exportLogs = async function() {
   const data = [];
   snap.forEach(d => data.push(d.data()));
 
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = isAdmin ? "ALL_LOGS.json" : `${currentUser}_logs.json`;
   a.click();
+}
+
+/* ---------- DARK MODE ---------- */
+function updateDarkIcon() {
+  darkBtn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+}
+
+darkBtn.onclick = () => {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "on" : "off");
+  updateDarkIcon();
 };
 
+if (localStorage.getItem("darkMode") === "on") {
+  document.body.classList.add("dark");
+}
+updateDarkIcon();
+
 /* ---------- ADMIN ---------- */
-window.adminLogin = function() {
+document.getElementById("adminLoginBtn").onclick = () => {
   const u = prompt("Admin username:");
   if (u === "Ec0n0mySt4ff0nT0p") {
     currentUser = u;
@@ -318,6 +334,11 @@ window.adminLogin = function() {
     alert("Incorrect admin username");
   }
 };
+
+/* ---------- BUTTON WIRING ---------- */
+document.getElementById("calcBtn").onclick = calculate;
+document.getElementById("loadBtn").onclick = loadLogs;
+document.getElementById("exportBtn").onclick = exportLogs;
 </script>
 </body>
 </html>
