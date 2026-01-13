@@ -3,230 +3,321 @@
 <head>
 <meta charset="UTF-8">
 <title>Better Income Calculator</title>
+
 <style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #eef2f7;
-    margin: 0;
-    padding: 0;
-  }
-  .container {
-    background: white;
-    padding: 30px;
-    max-width: 850px;
-    margin: 40px auto;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    position: relative;
-  }
-  h2 { text-align: center; color: #333; margin-bottom: 25px; }
-  label { display: block; margin: 10px 0 5px; color: #555; }
-  input { padding: 10px; width: 100%; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-  .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-  .button-row button { flex: 1; padding: 10px; border-radius: 6px; border: none; cursor: pointer; background-color: #4a90e2; color: white; font-weight: bold; transition: 0.2s; }
-  .button-row button:hover { background-color: #357ab7; }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-  th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-  th { background:#f5f5f5; }
-  #result { text-align:center; font-size:1.2em; margin-top:15px; color:#222; }
-  #adminLoginBtn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    padding:6px 12px;
-    border:none;
-    border-radius:6px;
-    background:#ff7f50;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-    transition:0.2s;
-  }
-  #adminLoginBtn:hover { background:#e66a3c; }
+body {
+  font-family: system-ui, sans-serif;
+  background: #eef2f7;
+  margin: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+.container {
+  max-width: 900px;
+  background: white;
+  margin: 40px auto;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  position: relative;
+  transition: background 0.3s;
+}
+
+h2 { text-align: center; }
+
+label { display:block; margin-top:12px; }
+
+input {
+  width:100%;
+  padding:10px;
+  margin-top:4px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+button {
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:#4a90e2;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover { opacity: 0.9; }
+
+.button-row {
+  display:flex;
+  gap:10px;
+  margin-top:15px;
+  flex-wrap:wrap;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+
+th,td {
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th { background:#f5f5f5; }
+
+#result {
+  text-align:center;
+  font-size:1.3em;
+  margin-top:15px;
+}
+
+/* Corner buttons */
+#adminLoginBtn {
+  position:absolute;
+  top:20px;
+  right:20px;
+  background:#ff7f50;
+}
+
+#darkModeBtn {
+  position:absolute;
+  top:20px;
+  left:20px;
+  font-size:18px;
+}
+
+/* ---------- DARK MODE ---------- */
+
+body.dark {
+  background: #121212;
+  color: #eaeaea;
+}
+
+body.dark .container {
+  background: #1e1e1e;
+}
+
+body.dark input {
+  background: #2a2a2a;
+  color: white;
+  border: 1px solid #444;
+}
+
+body.dark th {
+  background: #333;
+}
+
+body.dark td {
+  background: #1e1e1e;
+}
+
+body.dark button {
+  background: #5a9bff;
+}
+
+body.dark #adminLoginBtn {
+  background: #ff6a3d;
+}
 </style>
 </head>
+
 <body>
-
 <div class="container">
-  <h2>Better Income Calculator</h2>
+<h2>Better Income Calculator</h2>
 
-  <!-- Admin Login button -->
-  <button id="adminLoginBtn" onclick="adminLogin()">Admin Login</button>
+<button id="darkModeBtn" onclick="toggleDarkMode()">🌙</button>
+<button id="adminLoginBtn" onclick="adminLogin()">Admin Login</button>
 
-  <!-- Inputs -->
-  <label>Existing Money</label>
-  <input id="existing" type="number" placeholder="Enter current money">
+<label>Existing Money</label>
+<input id="existing" placeholder="e.g. 1,000 or 1.000">
 
-  <label>Weekly Add</label>
-  <input id="weekly" type="number" placeholder="Enter weekly addition">
+<label>Weekly Add</label>
+<input id="weekly" placeholder="e.g. 500">
 
-  <label>Weeks (or leave blank if using last payment date)</label>
-  <input id="weeks" type="number" placeholder="Number of weeks">
+<label>Weeks</label>
+<input id="weeks" type="number">
 
-  <label>Last Payment Date (optional)</label>
-  <input type="date" id="lastPayment">
+<label>Last Payment Date (optional)</label>
+<input type="date" id="lastPayment">
 
-  <div class="button-row">
-    <button onclick="calculate()">Calculate</button>
-    <button onclick="clearTable()">Clear Table</button>
-    <button onclick="exportLogs()">Export Logs</button>
-    <button onclick="loadLogs()">Load Logs</button>
-  </div>
+<div class="button-row">
+  <button onclick="calculate()">Calculate</button>
+  <button onclick="exportLogs()">Export Logs</button>
+  <button onclick="loadLogs()">Load Logs</button>
+</div>
 
-  <h3 id="result"></h3>
+<div id="result"></div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Username</th>
-        <th>Timestamp</th>
-        <th>Week</th>
-        <th>After 5% Loss</th>
-        <th>Weekly (10% Reduced)</th>
-        <th>After Weekly Add</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+<table>
+<thead>
+<tr>
+  <th>User</th>
+  <th>Time</th>
+  <th>Week</th>
+  <th>After 5%</th>
+  <th>Weekly (-10%)</th>
+  <th>Total</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// Firebase config
+/* ---------- FIREBASE ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyC7cbWLzC90Tgvf6KueOURUKfkWXxUXmI4",
   authDomain: "money-calculator-b205c.firebaseapp.com",
   projectId: "money-calculator-b205c",
   storageBucket: "money-calculator-b205c.firebasestorage.app",
   messagingSenderId: "1082194101254",
-  appId: "1:1082194101254:web:2115c50916683795e22f87",
-  measurementId: "G-2VGW9684EB"
+  appId: "1:1082194101254:web:2115c50916683795e22f87"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Guest session ID
-let currentUser = "guest_" + Math.random().toString(36).substr(2, 9);
+/* ---------- STATE ---------- */
+let currentUser = "guest_" + Math.random().toString(36).slice(2);
 let isAdmin = false;
 
-function addRow(username, ts, week, afterLoss, weeklyAdjusted, afterAdd) {
-  let row = document.createElement("tr");
-  row.innerHTML = `<td>${username}</td><td>${ts}</td><td>${week}</td><td>${afterLoss}</td><td>${weeklyAdjusted}</td><td>${afterAdd}</td>`;
-  document.getElementById("tableBody").appendChild(row);
+/* ---------- DARK MODE ---------- */
+const darkBtn = document.getElementById("darkModeBtn");
+
+function updateDarkIcon() {
+  darkBtn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
 }
 
-function clearTableInternal() {
-  document.getElementById("tableBody").innerHTML = "";
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "on" : "off");
+  updateDarkIcon();
 }
 
-async function saveLogInternal(log) {
-  log.username = currentUser;
-  try { await addDoc(collection(db, "logs"), log); }
-  catch(e){ console.error("Error saving log:", e); }
+if (localStorage.getItem("darkMode") === "on") {
+  document.body.classList.add("dark");
+}
+updateDarkIcon();
+
+window.toggleDarkMode = toggleDarkMode;
+
+/* ---------- HELPERS ---------- */
+function parseMoney(val) {
+  if (!val) return 0;
+  val = val.replace(/[.,](?=.*[.,])/g, "");
+  val = val.replace(/,/g, ".");
+  return Math.floor(Number(val));
 }
 
-async function loadLogs() {
-  clearTableInternal();
-  try {
-    let snapshot;
-    if (isAdmin) {
-      snapshot = await getDocs(collection(db, "logs"));
-    } else {
-      const q = query(collection(db, "logs"), where("username", "==", currentUser));
-      snapshot = await getDocs(q);
-    }
-    snapshot.forEach(doc => {
-      const log = doc.data();
-      log.weeks.forEach(w => addRow(log.username, log.timestamp, w.week, w.afterLoss, w.weeklyAdjusted, w.afterAdd));
-    });
-  } catch(e){ console.error(e); }
+function fmt(n) {
+  return n.toLocaleString("en-GB");
 }
 
-async function exportLogs() {
-  try {
-    let allLogs = [];
-    if (isAdmin) {
-      const snapshot = await getDocs(collection(db, "logs"));
-      snapshot.forEach(doc => allLogs.push(doc.data()));
-    } else {
-      const q = query(collection(db, "logs"), where("username", "==", currentUser));
-      const snapshot = await getDocs(q);
-      snapshot.forEach(doc => allLogs.push(doc.data()));
-    }
-
-    if (allLogs.length === 0) { alert("No logs to export."); return; }
-
-    const jsonStr = JSON.stringify(allLogs, null, 2);
-    const blob = new Blob([jsonStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = (isAdmin ? "ALL_LOGS" : currentUser + "_logs") + ".json";
-    a.click();
-    URL.revokeObjectURL(url);
-  } catch(e){ console.error(e); }
+function clearTable() {
+  tableBody.innerHTML = "";
 }
 
-window.clearTable = clearTableInternal;
+function addRow(u, t, w, a, wa, tot) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${u}</td>
+    <td>${t}</td>
+    <td>${w}</td>
+    <td>${fmt(a)}</td>
+    <td>${fmt(wa)}</td>
+    <td>${fmt(tot)}</td>`;
+  tableBody.appendChild(tr);
+}
 
+/* ---------- AUTO WEEKS ---------- */
+lastPayment.addEventListener("change", () => {
+  if (!lastPayment.value) return;
+  const d1 = new Date(lastPayment.value);
+  const d2 = new Date();
+  const days = Math.floor((d2 - d1) / 86400000);
+  let weeks = days % 7 >= 4 ? Math.floor(days / 7) + 1 : Math.floor(days / 7);
+  weeks.value = Math.max(0, weeks);
+  document.getElementById("weeks").value = weeks;
+});
+
+/* ---------- CALCULATE ---------- */
 window.calculate = async function() {
-  let existing = Number(document.getElementById("existing").value);
-  let weekly = Number(document.getElementById("weekly").value);
-  const weeksInput = Number(document.getElementById("weeks").value);
-  const lastPaymentDate = document.getElementById("lastPayment").value;
+  clearTable();
 
-  if (!existing || !weekly) { 
-    alert("Enter valid numbers for existing money and weekly add."); 
-    return; 
+  let existing = parseMoney(existingInput.value || existing.value);
+  let weekly = parseMoney(weeklyInput.value || weekly.value);
+  let weeksCount = Number(weeks.value);
+
+  if (!existing || !weekly || !weeksCount) {
+    alert("Invalid input");
+    return;
   }
 
-  // Determine weeks
-  let weeks;
-  if (lastPaymentDate) {
-    const lastDate = new Date(lastPaymentDate);
-    const today = new Date();
-    const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-    weeks = diffDays % 7 >= 4 ? Math.floor(diffDays / 7) + 1 : Math.floor(diffDays / 7);
-    if (weeks <= 0) { alert("The last payment date is too recent."); return; }
-  } else {
-    weeks = weeksInput;
-    if (!weeks || weeks <= 0) { 
-      alert("Enter a valid number of weeks or a last payment date."); 
-      return; 
-    }
+  const log = { username: currentUser, timestamp: new Date().toLocaleString(), weeks: [] };
+
+  for (let i = 1; i <= weeksCount; i++) {
+    let afterLoss = Math.ceil(existing * 0.95);
+    let weeklyAdj = Math.ceil(weekly * 0.9);
+    let total = afterLoss + weeklyAdj;
+
+    log.weeks.push({ week: i, afterLoss, weeklyAdj, total });
+    addRow(currentUser, log.timestamp, i, afterLoss, weeklyAdj, total);
+
+    existing = total;
   }
 
-  let log = { timestamp: new Date().toLocaleString(), weeks: [] };
-
-  for (let i = 1; i <= weeks; i++) {
-    let afterLoss = Math.ceil(existing * 0.95);       // 5% loss
-    let weeklyAdjusted = Math.ceil(weekly * 0.9);     // 10% reduction
-    let afterAdd = afterLoss + weeklyAdjusted;        // add weeklyAdjusted
-    log.weeks.push({ week: i, afterLoss, weeklyAdjusted, afterAdd });
-    addRow(currentUser, log.timestamp, i, afterLoss, weeklyAdjusted, afterAdd);
-    existing = afterAdd;
-  }
-
-  document.getElementById("result").innerText = "Final Money: " + existing;
-  await saveLogInternal(log);
+  result.textContent = "Final Money: " + fmt(existing);
+  await addDoc(collection(db, "logs"), log);
 };
 
-// Admin login
+/* ---------- LOGS ---------- */
+window.loadLogs = async function() {
+  clearTable();
+  const q = isAdmin
+    ? collection(db, "logs")
+    : query(collection(db, "logs"), where("username", "==", currentUser));
+
+  const snap = await getDocs(q);
+  snap.forEach(d =>
+    d.data().weeks.forEach(w =>
+      addRow(d.data().username, d.data().timestamp, w.week, w.afterLoss, w.weeklyAdj, w.total)
+    )
+  );
+};
+
+window.exportLogs = async function() {
+  const q = isAdmin
+    ? collection(db, "logs")
+    : query(collection(db, "logs"), where("username", "==", currentUser));
+
+  const snap = await getDocs(q);
+  const data = [];
+  snap.forEach(d => data.push(d.data()));
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = isAdmin ? "ALL_LOGS.json" : `${currentUser}_logs.json`;
+  a.click();
+};
+
+/* ---------- ADMIN ---------- */
 window.adminLogin = function() {
-  const uname = prompt("Enter admin username:");
-  if (uname === "Ec0n0mySt4ff0nT0p") {
-    currentUser = uname;
+  const u = prompt("Admin username:");
+  if (u === "Ec0n0mySt4ff0nT0p") {
+    currentUser = u;
     isAdmin = true;
-    alert("Admin logged in! You can now load/export all logs.");
+    alert("Admin logged in");
   } else {
-    alert("Incorrect admin username.");
+    alert("Incorrect admin username");
   }
 };
 </script>
-
 </body>
 </html>
