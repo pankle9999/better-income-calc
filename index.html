@@ -163,7 +163,7 @@ const adminBtn = document.getElementById("adminLoginBtn");
 function parseMoney(val) {
   if(!val) return 0;
   val = val.replace(/[.,](?=.*[.,])/g,'');
-  val = val.replace(/,/g,'.');
+  val = val.replace(/,/g,'');
   return Math.floor(Number(val));
 }
 
